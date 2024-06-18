@@ -33,10 +33,12 @@ ifdef SYSTEM_EXT_MANIFEST_FILES
 endif
 
 # VNDK Version in device compatibility matrix and framework manifest
+ifeq ($(KEEP_VNDK),true)
 ifeq ($(BOARD_VNDK_VERSION),current)
 VINTF_VNDK_VERSION := $(PLATFORM_VNDK_VERSION)
 else
 VINTF_VNDK_VERSION := $(BOARD_VNDK_VERSION)
+endif
 endif
 
 # Device Compatibility Matrix
@@ -59,18 +61,29 @@ GEN := $(local-generated-sources-dir)/compatibility_matrix.xml
 
 # VNDK is no longer a dependency for vendor version 35 and beyond
 $(GEN): PRIVATE_VINTF_VNDK_VERSION :=
+ifdef VINTF_VNDK_VERSION
 ifeq ($(call math_is_number,$(VINTF_VNDK_VERSION)),true)
 ifeq ($(call math_lt_or_eq,$(VINTF_VNDK_VERSION),34),true)
 $(GEN): PRIVATE_VINTF_VNDK_VERSION := $(VINTF_VNDK_VERSION)
 endif
 endif
+endif
 $(GEN): PRIVATE_DEVICE_MATRIX_INPUT_FILE := $(DEVICE_MATRIX_INPUT_FILE)
+
+ifeq ($(PRIVATE_VINTF_VNDK_VERSION),)
+$(GEN): $(DEVICE_MATRIX_INPUT_FILE) $(HOST_OUT_EXECUTABLES)/assemble_vintf
+	BOARD_SYSTEMSDK_VERSIONS="$(BOARD_SYSTEMSDK_VERSIONS)" \
+		$(HOST_OUT_EXECUTABLES)/assemble_vintf \
+		-i $(call normalize-path-list,$(PRIVATE_DEVICE_MATRIX_INPUT_FILE)) \
+		-o $@
+else
 $(GEN): $(DEVICE_MATRIX_INPUT_FILE) $(HOST_OUT_EXECUTABLES)/assemble_vintf
 	REQUIRED_VNDK_VERSION=$(PRIVATE_VINTF_VNDK_VERSION) \
 	BOARD_SYSTEMSDK_VERSIONS="$(BOARD_SYSTEMSDK_VERSIONS)" \
 		$(HOST_OUT_EXECUTABLES)/assemble_vintf \
 		-i $(call normalize-path-list,$(PRIVATE_DEVICE_MATRIX_INPUT_FILE)) \
 		-o $@
+endif
 
 LOCAL_PREBUILT_MODULE_FILE := $(GEN)
 include $(BUILD_PREBUILT)
@@ -133,6 +146,7 @@ GEN := $(local-generated-sources-dir)/manifest.xml
 $(GEN): PRIVATE_SYSTEM_EXT_MANIFEST_FILES := $(SYSTEM_EXT_MANIFEST_INPUT_FILES)
 $(GEN): PRIVATE_PROVIDED_VNDK_VERSIONS := \
   $(sort $(VINTF_VNDK_VERSION) $(PRODUCT_EXTRA_VNDK_VERSIONS))
+
 $(GEN): $(SYSTEM_EXT_MANIFEST_INPUT_FILES) $(HOST_OUT_EXECUTABLES)/assemble_vintf
 	PROVIDED_VNDK_VERSIONS="$(PRIVATE_PROVIDED_VNDK_VERSIONS)" \
 	$(HOST_OUT_EXECUTABLES)/assemble_vintf \

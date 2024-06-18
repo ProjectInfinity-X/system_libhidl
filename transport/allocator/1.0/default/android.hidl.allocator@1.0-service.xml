@@ -1,5 +1,5 @@
 <manifest version="1.0" type="framework">
-    <hal>
+    <hal max-level="8">
         <name>android.hidl.allocator</name>
         <transport>hwbinder</transport>
         <version>1.0</version>

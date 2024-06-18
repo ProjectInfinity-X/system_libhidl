@@ -19,7 +19,7 @@ function freeze() {
     return 1
   }
 
-  local modules_to_build=check-vintf-all
+  local modules_to_build="check-vintf-all vintffm"
   echo "Building ${modules_to_build}"
   "${ANDROID_BUILD_TOP}/build/soong/soong_ui.bash" --build-mode --all-modules --dir="$(pwd)" ${modules_to_build} || {
     echo "${modules_to_build} failed. Backwards compatibility might be broken."
