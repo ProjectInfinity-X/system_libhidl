@@ -29,8 +29,6 @@ cc_defaults {
         "libutils",
         "libprocessgroup",
         "libjsoncpp",
-        "libcgrouprc",
-        "libcgrouprc_format",
         "libfmq",
     ],
     target: {
